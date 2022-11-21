@@ -1,5 +1,5 @@
 # OPEN_AGB_FIRM Forwarder
-Boot Firms with a CIA shortcut
+Boot GBA Roms with OPEN_AGB_FIRM from the 3DS Home Menu
 
 Usage instructions:
   Needs [FastBoot3ds](https://github.com/derrekr/fastboot3DS) or [GodMode9](https://github.com/d0k3/GodMode9) as Firm0 instead of B9S  
