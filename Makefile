@@ -31,12 +31,12 @@ SOURCES		    :=	source
 DATA		    :=	data
 INCLUDES	    :=	inc
 ROMFS			:=	romfs
-APP_TITLE       :=  GodMode9
+APP_TITLE       :=  Pokemon_FireRed
 TARGET		    :=	$(APP_TITLE)
-APP_DESCRIPTION :=  Open source 3DS all access file browser
-APP_AUTHOR      :=  d0k3
-APP_PRODUCT_CODE:=  CTR-P-AGM9
-APP_UNIQUE_ID   :=  0xA9001
+APP_DESCRIPTION :=  Pokemon FireRed
+APP_AUTHOR      :=  Nintendo
+APP_PRODUCT_CODE:=  CTR-P-APFR
+APP_UNIQUE_ID   :=  0xA9070
 ICON            :=  $(TOPDIR)/assets/icon.png
 
 APP_TITLE       :=  $(shell echo "$(APP_TITLE)" | cut -c1-128)
@@ -54,7 +54,7 @@ CFLAGS	:=	-g -Wall -O2 -mword-relocations \
 			-fomit-frame-pointer -ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DAPP_TITLE="\"$(APP_TITLE)\"" -Og
+CFLAGS	+=	$(INCLUDE) -D__3DS__ -DAPP_TITLE="\"$(APP_TITLE)\"" -Og
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 

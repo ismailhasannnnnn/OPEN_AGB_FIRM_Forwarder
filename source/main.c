@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
+#include <errno.h>
 #include <3ds.h>
 
 #include "LED.h"
@@ -15,6 +15,8 @@
 #define PATH_FB3DSCFGSD "3DS/fastbootcfg.txt"
 #define PATH_FB3DSCFGCTR "/fastboot3ds/fastbootcfg.txt"
 #define PATH_LOG "TST/log.txt"
+#define PATH_AUTOBOOT "sdmc:/3ds/open_agb_firm/autoboot.txt"
+#define PATH_ROM "sdmc:/roms/gba/Pokemon Emerald.gba"
 
 #define FB3DS_FIRMBOOTSTR "RAM_FIRM_BOOT = Enabled"
 
@@ -26,72 +28,53 @@ void *buf = NULL;
 
 void __attribute__((weak)) __appInit(void) 
 {
-    buf = linearAlloc(FIRM_OFFSET + FIRM_MAXSIZE);    
-    
+    buf = linearAlloc(FIRM_OFFSET + FIRM_MAXSIZE);
 	// Initialize services
     srvInit();
     aptInit();
     acInit();
     hidInit();
     fsInit();
-    sdmcInit();
+    archiveMountSdmc();
 	romfsInit();
-	
 }
 
 void __attribute__((weak)) __appExit(void) 
 {
 	// Exit services
-    sdmcExit();
 	romfsExit();
     fsExit();
 	gfxExit();
     hidExit();
 	acExit();
     aptExit();
+    archiveUnmountAll();
     srvExit();
 
     GSPGPU_FlushDataCache(buf, FIRM_MAXSIZE);
     linearFree(buf);
 }
 
-/*void wait_for_a()
-{
-	while(1)
-		if(hidKeysDown() & KEY_A)
-			break;
-}*/
-
-/*int RamBootFB3ds()
-{
-	size_t size;
-	char config[25], *strout;
-	FILE *cfg = fopen(PATH_FB3DSCFGSD, "r"), *log = fopen(PATH_LOG,"wb");
-
-	if(cfg)
-	{
-		while(fgets(config, sizeof(config), cfg))
-		{
-			if(config == FB3DS_FIRMBOOTSTR)
-			{
-				return 1;
-			}
-			fprintf(log, "fgets read '%s'\n", config);
-		}
-		return 2;
-	}
-	fclose(log);
-	return 0;
-}*/
 int main() 
 {
-	
     gfxInitDefault();
 	consoleInit(GFX_BOTTOM, NULL);
 	
 	u8 *contents, slot, annoy;
 	FILE *payload, *splash, *log;
 	size_t splash_size, payload_size;
+
+    FILE *fp;
+    const char* textPath = "sdmc:/3ds/open_agb_firm/autoboot.txt";
+    const char* rom_path = "sdmc:/roms/gba/Pokemon FireRed.gba";
+    fp = fopen(textPath, "w+");
+    if(fp) {
+        fputs(rom_path, fp);
+        fclose(fp);
+    } else {
+        printf("fopen failed, errno = %d\n", errno);
+        perror("Error");
+    }
 	
 	if (!buf)
 	{
@@ -105,30 +88,19 @@ int main()
 		// must be at the start of FCRAM
         printf("Bad firm location\n");
     }
-	
-	splash = fopen(PATH_SPLASH, "rb");
-	fseek(splash, 0, SEEK_END);
-	splash_size = ftell(splash);
-	rewind(splash);
-	contents = malloc(splash_size);
-	fread(contents, 1, splash_size, splash);
+
+//	splash = fopen(PATH_SPLASH, "rb");
+//	fseek(splash, 0, SEEK_END);
+//	splash_size = ftell(splash);
+//	rewind(splash);
+//	contents = malloc(splash_size);
+//	fread(contents, 1, splash_size, splash);
 	memcpy(gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL), contents, splash_size);
 	free(contents);
 	gfxFlushBuffers();
 	gfxSwapBuffers();
 	gspWaitForVBlank();
-	
-	/*if(!fopen(PATH_DEFAULT, "r"))
-	{
-		printf("%s not found on the root of the SD\n", PATH_DEFAULT);
-		gfxFlushBuffers();
-		gfxSwapBuffers();
-		fixcolor(255,0,0);
-		for(int i=0; i<=300; i++) gspWaitForVBlank();
-		errfInit();
-		ERRF_ThrowResultWithMessage((Result) 'TST', "Read the README next time");
-		errfExit();
-	}*/
+
 	payload = fopen(PATH_PAYLOADSD, "r");
 	
 	if(!payload)
@@ -139,33 +111,6 @@ int main()
 	{
 		printf("Custom payload found on SD\n");
 	}
-	
-	//log = fopen(PATH_LOG,"w");
-	//fprintf(log, "RamBootFB3ds() returned %d", ret);
-	//fclose(log);
-	/*if(!ret && !annoy)
-	{
-		fixcolor(255, 0, 0);
-		printf("FastBoot 3DS config not found, %s might not launch.\nPress (A) to get rid of this message\nPress (B) to ignore\n", APP_TITLE);
-		while(1)
-		{
-			if(hidKeysDown() & KEY_A)
-			{
-				mcuWriteRegister(CONF_REG,(u8*) 1, 1);
-				break;
-			}
-			if(hidKeysDown() & KEY_B)
-			{
-				break;
-			}
-		}
-	}
-	else if(ret == 2)
-	{
-		fixcolor(255, 165, 0);
-		printf("FastBoot 3DS not properly configured.\nPlease enable 'FCRAM Boot' under the 'Boot Setup' menu\n");
-		for(int i=0; i<=60*5; i++) gspWaitForVBlank();
-	}*/
 	
 	fseek(payload, 0, SEEK_END);
 	payload_size = ftell(payload);
@@ -181,6 +126,5 @@ int main()
 	stfuled();
 	APT_HardwareResetAsync();
 	
-    
     return 0;
 }
