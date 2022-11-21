@@ -1,4 +1,4 @@
-# That-Shortcut-Thingy
+# OPEN_AGB_FIRM Forwarder
 Boot Firms with a CIA shortcut
 
 Usage instructions:
